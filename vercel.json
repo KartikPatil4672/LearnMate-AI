@@ -1,9 +1,9 @@
-  {
-    "version": 2,
-    "functions": {
-      "api/*.py": { "maxDuration": 30 }
-    },
-    "rewrites": [
-      { "source": "/(.*)", "destination": "/api/app" }
-    ]
-  }
+{
+  "version": 2,
+  "functions": {
+    "api/*.py": { "maxDuration": 30 }
+  },
+  "rewrites": [
+    { "source": "/api/(.*)", "destination": "/api/app" }
+  ]
+}gir
