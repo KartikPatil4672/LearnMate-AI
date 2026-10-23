@@ -6,4 +6,4 @@
   "rewrites": [
     { "source": "/api/(.*)", "destination": "/api/app" }
   ]
-}gir
+}
