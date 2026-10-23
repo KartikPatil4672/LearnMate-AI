@@ -1,0 +1,10 @@
+{
+  "topic": "Pythagorean theorem",
+  "explanation": "In a right‑angled triangle, the square of the hypotenuse equals the sum of the squares of the other two sides: a² + b² = c².",
+  "example": "If the legs are 3 and 4, the hypotenuse is √(3²+4²) = 5.",
+  "quiz": {
+    "question": "What is the length of the hypotenuse for a right triangle with legs 6 and 8?",
+    "options": ["10", "9", "12", "14"],
+    "answer": 1
+  }
+}

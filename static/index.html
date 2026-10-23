@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>LearnMate AI // Dashboard</title>
+<style>
+  :root {
+    --bg: #03050a;
+    --panel: rgba(8, 14, 28, .88);
+    --line: rgba(0, 200, 255, .22);
+    --neon: #00c8ff;
+    --neon2: #2f6bff;
+    --text: #d9e8f5;
+    --muted: #6f87a0;
+    --bad: #ff3b6b;
+    --warn: #ffb020;
+    --mono: "Cascadia Code", Consolas, "SF Mono", "Courier New", monospace;
+    --sans: "Segoe UI", system-ui, Roboto, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; color: var(--text); font-family: var(--sans); min-height: 100vh;
+    background:
+      radial-gradient(900px 500px at 15% -10%, rgba(47, 107, 255, .18), transparent 60%),
+      radial-gradient(700px 400px at 100% 0%, rgba(0, 200, 255, .12), transparent 60%),
+      linear-gradient(rgba(0, 200, 255, .04) 1px, transparent 1px) 0 0 / 40px 40px,
+      linear-gradient(90deg, rgba(0, 200, 255, .04) 1px, transparent 1px) 0 0 / 40px 40px,
+      var(--bg);
+  }
+  .wrap { max-width: 1120px; margin: 0 auto; padding: 20px 18px 70px; }
+
+  /* top bar */
+  header.top { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;
+    padding: 12px 0 18px; border-bottom: 1px solid var(--line); margin-bottom: 22px; }
+  .logo { font-family: var(--mono); font-size: 20px; letter-spacing: 3px; color: var(--neon);
+    text-shadow: 0 0 10px rgba(0, 200, 255, .8), 0 0 24px rgba(0, 200, 255, .4); }
+  .logo span { color: var(--text); text-shadow: none; opacity: .7; }
+  .pills { display: flex; gap: 8px; flex-wrap: wrap; }
+  .pill { font-family: var(--mono); font-size: 11px; letter-spacing: 1px; padding: 5px 10px; border: 1px solid var(--line);
+    border-radius: 999px; color: var(--muted); }
+  .pill i { display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: var(--muted); margin-right: 6px; }
+  .pill.on { color: var(--neon); border-color: rgba(0, 200, 255, .5); }
+  .pill.on i { background: var(--neon); box-shadow: 0 0 8px var(--neon); }
+
+  /* panels */
+  .panel { position: relative; background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 18px;
+    margin-bottom: 18px; box-shadow: 0 0 22px rgba(0, 200, 255, .06), inset 0 0 30px rgba(0, 200, 255, .03); }
+  .panel::before, .panel::after { content: ""; position: absolute; width: 14px; height: 14px; border: 2px solid var(--neon); }
+  .panel::before { top: -1px; left: -1px; border-right: 0; border-bottom: 0; }
+  .panel::after { bottom: -1px; right: -1px; border-left: 0; border-top: 0; }
+  .label { font-family: var(--mono); font-size: 11px; letter-spacing: 2px; text-transform: uppercase; color: var(--neon);
+    margin: 0 0 14px; text-shadow: 0 0 8px rgba(0, 200, 255, .5); }
+  .label::before { content: "// "; color: var(--muted); }
+
+  /* form */
+  .fields { display: grid; grid-template-columns: repeat(3, 1fr) auto; gap: 12px; align-items: end; }
+  @media (max-width: 800px) { .fields { grid-template-columns: 1fr; } }
+  .field label { display: block; font-family: var(--mono); font-size: 11px; letter-spacing: 1.5px; color: var(--muted);
+    text-transform: uppercase; margin-bottom: 6px; }
+  input[type=text], select {
+    width: 100%; padding: 11px 12px; background: #050a14; color: var(--text); font-family: var(--mono); font-size: 14px;
+    border: 1px solid var(--line); border-radius: 4px; outline: none; }
+  input[type=text]:focus, select:focus { border-color: var(--neon); box-shadow: 0 0 0 1px var(--neon), 0 0 14px rgba(0, 200, 255, .35); }
+  select option { background: #050a14; }
+
+  button { font-family: var(--mono); font-size: 13px; letter-spacing: 1.5px; text-transform: uppercase; cursor: pointer;
+    padding: 11px 18px; border-radius: 4px; border: 1px solid var(--neon); color: var(--neon); background: transparent;
+    transition: all .15s; }
+  button:hover:not(:disabled) { background: rgba(0, 200, 255, .12); box-shadow: 0 0 16px rgba(0, 200, 255, .5); }
+  button.primary { background: linear-gradient(90deg, var(--neon2), var(--neon)); color: #00101a; border-color: transparent; font-weight: 700; }
+  button.primary:hover:not(:disabled) { box-shadow: 0 0 22px rgba(0, 200, 255, .8); }
+  button:disabled { opacity: .35; cursor: not-allowed; }
+  .err { font-family: var(--mono); font-size: 13px; color: var(--bad); margin-top: 12px; min-height: 18px; }
+
+  /* student bar */
+  .student { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+  .avatar { width: 48px; height: 48px; border-radius: 50%; display: grid; place-items: center; font-family: var(--mono); font-weight: 700;
+    color: var(--neon); border: 1px solid var(--neon); box-shadow: 0 0 14px rgba(0, 200, 255, .5), inset 0 0 12px rgba(0, 200, 255, .2); }
+  .student .who { flex: 1; min-width: 180px; }
+  .student .who b { display: block; font-size: 18px; }
+  .student .who small { font-family: var(--mono); color: var(--muted); letter-spacing: 1px; }
+  .actions { display: flex; gap: 10px; flex-wrap: wrap; }
+
+  /* KPIs */
+  .kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 18px; }
+  @media (max-width: 800px) { .kpis { grid-template-columns: repeat(2, 1fr); } }
+  .kpi { background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 14px 16px; }
+  .kpi small { font-family: var(--mono); font-size: 10px; letter-spacing: 2px; color: var(--muted); text-transform: uppercase; }
+  .kpi b { display: block; font-family: var(--mono); font-size: 30px; margin-top: 6px; color: var(--neon);
+    text-shadow: 0 0 14px rgba(0, 200, 255, .6); }
+  .kpi b.bad { color: var(--bad); text-shadow: 0 0 14px rgba(255, 59, 107, .6); }
+
+  .cols { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+  @media (max-width: 800px) { .cols { grid-template-columns: 1fr; } }
+
+  /* mastery bars */
+  .mrow { display: grid; grid-template-columns: 130px 1fr 44px; gap: 10px; align-items: center; margin: 12px 0; font-size: 13px; }
+  .mrow span:first-child { font-family: var(--mono); color: var(--text); }
+  .mrow span:last-child { font-family: var(--mono); text-align: right; }
+  .bar { height: 10px; background: rgba(0, 200, 255, .08); border: 1px solid var(--line); border-radius: 2px; overflow: hidden; }
+  .bar > div { height: 100%; transition: width .6s; }
+  .empty { color: var(--muted); font-family: var(--mono); font-size: 13px; }
+
+  /* chart */
+  svg.chart { width: 100%; height: auto; display: block; }
+  svg.chart .grid { stroke: rgba(0, 200, 255, .12); stroke-width: 1; }
+  svg.chart .line { fill: none; stroke: var(--neon); stroke-width: 2.5; filter: drop-shadow(0 0 5px var(--neon)); }
+  svg.chart .dot { fill: #00101a; stroke: var(--neon); stroke-width: 2; }
+  svg.chart text { fill: var(--muted); font-family: var(--mono); font-size: 10px; }
+
+  /* quiz */
+  .q { margin-bottom: 20px; }
+  .q p { margin: 0 0 10px; font-weight: 600; }
+  .q .tag { font-family: var(--mono); font-size: 11px; color: var(--neon); margin-left: 8px; letter-spacing: 1px; font-weight: 400; }
+  label.opt { display: block; padding: 10px 12px; border: 1px solid var(--line); border-radius: 4px; margin-bottom: 7px; cursor: pointer;
+    background: rgba(0, 200, 255, .02); transition: all .12s; }
+  label.opt:hover { border-color: var(--neon); background: rgba(0, 200, 255, .08); }
+  label.opt:has(input:checked) { border-color: var(--neon); box-shadow: 0 0 12px rgba(0, 200, 255, .4); background: rgba(0, 200, 255, .12); }
+  label.opt input { accent-color: var(--neon); margin-right: 8px; }
+
+  .big { margin-bottom: 18px; font-family: var(--mono); font-size: 40px; color: var(--neon); text-shadow: 0 0 18px rgba(0, 200, 255, .7); }
+  .rev-ok { color: #4de8b0; } .rev-bad { color: var(--bad); }
+  ul { margin: 8px 0 0 18px; padding: 0; } li { margin: 4px 0; }
+  .plan-item { border-left: 2px solid var(--neon); padding: 2px 0 2px 14px; margin-bottom: 16px; }
+  .plan-item h4 { margin: 0 0 4px; font-family: var(--mono); letter-spacing: 1px; }
+  .plan-item h4.weak { color: var(--bad); } .plan-item h4.ok { color: #4de8b0; }
+
+  table { width: 100%; border-collapse: collapse; font-family: var(--mono); font-size: 13px; }
+  th { text-align: left; color: var(--muted); font-size: 11px; letter-spacing: 2px; text-transform: uppercase; padding: 8px; border-bottom: 1px solid var(--line); }
+  td { padding: 8px; border-bottom: 1px solid rgba(0, 200, 255, .08); }
+  .hidden { display: none !important; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="top">
+    <div class="logo">LEARNMATE<span>//AI</span></div>
+    <div class="pills">
+      <div class="pill" id="pApi"><i></i>API</div>
+      <div class="pill" id="pAi"><i></i>GEMINI</div>
+    </div>
+  </header>
+
+  <!-- PROFILE -->
+  <section class="panel" id="profilePanel">
+    <p class="label">Student access</p>
+    <div class="fields">
+      <div class="field"><label for="first">First name</label><input type="text" id="first" maxlength="40" autocomplete="given-name" placeholder="e.g. Kartik"></div>
+      <div class="field"><label for="last">Surname</label><input type="text" id="last" maxlength="40" autocomplete="family-name" placeholder="e.g. Sharma"></div>
+      <div class="field"><label for="course">Course</label><select id="course"></select></div>
+      <button class="primary" id="btnOpen">Open dashboard</button>
+    </div>
+    <div class="err" id="err"></div>
+  </section>
+
+  <!-- DASHBOARD -->
+  <div id="dash" class="hidden">
+    <section class="panel">
+      <div class="student">
+        <div class="avatar" id="avatar">--</div>
+        <div class="who"><b id="whoName">-</b><small id="whoCourse">-</small></div>
+        <div class="actions">
+          <button class="primary" id="btnDiag">Start diagnostic</button>
+          <button id="btnPractice">Practice weak topics</button>
+        </div>
+      </div>
+    </section>
+
+    <div class="kpis" id="kpis"></div>
+
+    <div class="cols">
+      <section class="panel"><p class="label">Topic mastery</p><div id="mastery"></div></section>
+      <section class="panel"><p class="label">Score trend</p><div id="trend"></div></section>
+    </div>
+
+    <section class="panel hidden" id="quiz"></section>
+    <section class="panel hidden" id="result"></section>
+    <section class="panel hidden" id="plan"></section>
+    <section class="panel"><p class="label">Attempt log</p><div id="history"></div></section>
+  </div>
+</div>
+
+<script>
+const $ = (id) => document.getElementById(id);
+let session = null;
+let current = null;   // student identity used for every API call
+
+function el(tag, props = {}, ...kids) {
+  const n = document.createElement(tag);
+  for (const [k, v] of Object.entries(props)) { if (k === "class") n.className = v; else n[k] = v; }  // textContent only
+  kids.forEach(k => n.append(k));
+  return n;
+}
+const svgEl = (tag, attrs = {}) => {
+  const n = document.createElementNS("http://www.w3.org/2000/svg", tag);
+  for (const [k, v] of Object.entries(attrs)) n.setAttribute(k, v);
+  return n;
+};
+const showErr = (m) => { $("err").textContent = m || ""; };
+const colorFor = (p) => p < 60 ? "var(--bad)" : p < 80 ? "var(--warn)" : "var(--neon)";
+const qs = (extra = {}) => new URLSearchParams({ ...current, ...extra }).toString();
+
+async function api(path, opts) {
+  const r = await fetch(path, opts);
+  const data = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error(typeof data.detail === "string" ? data.detail : "Request failed");
+  return data;
+}
+
+/* ---------- startup ---------- */
+async function init() {
+  try {
+    const h = await api("/api/health");
+    $("pApi").classList.add("on");
+    $("pAi").classList.toggle("on", h.gemini);
+    $("pAi").lastChild.textContent = h.gemini ? "GEMINI ON" : "GEMINI OFF (BANK)";
+    const c = await api("/api/courses");
+    c.courses.forEach(name => $("course").append(el("option", { value: name, textContent: name })));
+  } catch (e) { showErr("Cannot reach the server. Is `python run.py` running?"); }
+}
+
+/* ---------- open dashboard ---------- */
+async function openDashboard() {
+  showErr("");
+  const first = $("first").value.trim(), last = $("last").value.trim(), course = $("course").value;
+  if (!first || !last) return showErr("Enter both first name and surname.");
+  if (!course) return showErr("Choose a course.");
+  current = { first_name: first, last_name: last, course };
+  try {
+    const p = await api(`/api/progress?${qs()}`);
+    $("avatar").textContent = (p.profile.first_name[0] + p.profile.last_name[0]).toUpperCase();
+    $("whoName").textContent = `${p.profile.first_name} ${p.profile.last_name}`;
+    $("whoCourse").textContent = `COURSE: ${p.profile.course.toUpperCase()}`;
+    ["quiz", "result", "plan"].forEach(i => $(i).classList.add("hidden"));
+    $("dash").classList.remove("hidden");
+    renderProgress(p);
+  } catch (e) { showErr(e.message); }
+}
+
+async function refresh() { renderProgress(await api(`/api/progress?${qs()}`)); }
+
+function renderProgress(p) {
+  const vals = Object.values(p.mastery);
+  const avg = vals.length ? Math.round(vals.reduce((a, b) => a + b, 0) / vals.length) : null;
+  const last = p.history.length ? p.history[p.history.length - 1].percentage : null;
+  const kpi = (label, value, bad) => el("div", { class: "kpi" }, el("small", { textContent: label }), el("b", { class: bad ? "bad" : "", textContent: value }));
+  $("kpis").replaceChildren(
+    kpi("Latest score", last === null ? "--" : last + "%"),
+    kpi("Avg mastery", avg === null ? "--" : avg + "%"),
+    kpi("Weak topics", p.weak_topics.length, p.weak_topics.length > 0),
+    kpi("Attempts", p.attempts)
+  );
+  renderMastery(p.mastery);
+  renderTrend(p.history);
+  renderHistory(p.history);
+  $("btnPractice").disabled = !vals.length;
+}
+
+function renderMastery(mastery) {
+  const box = $("mastery");
+  const entries = Object.entries(mastery);
+  if (!entries.length) return box.replaceChildren(el("div", { class: "empty", textContent: "No data yet. Start the diagnostic." }));
+  box.replaceChildren(...entries.map(([t, m]) => {
+    const fill = el("div"); fill.style.width = m + "%"; fill.style.background = colorFor(m); fill.style.boxShadow = `0 0 10px ${colorFor(m)}`;
+    return el("div", { class: "mrow" }, el("span", { textContent: t }), el("div", { class: "bar" }, fill), el("span", { textContent: m + "%" }));
+  }));
+}
+
+function renderTrend(history) {
+  const box = $("trend");
+  if (!history.length) return box.replaceChildren(el("div", { class: "empty", textContent: "No attempts yet." }));
+  const W = 400, H = 170, padL = 30, padR = 12, padT = 10, padB = 22;
+  const svg = svgEl("svg", { class: "chart", viewBox: `0 0 ${W} ${H}` });
+  [0, 50, 100].forEach(v => {
+    const y = padT + (H - padT - padB) * (1 - v / 100);
+    svg.append(svgEl("line", { class: "grid", x1: padL, x2: W - padR, y1: y, y2: y }));
+    const t = svgEl("text", { x: 2, y: y + 3 }); t.textContent = v; svg.append(t);
+  });
+  const pts = history.map((h, i) => [
+    history.length === 1 ? (padL + W - padR) / 2 : padL + (W - padL - padR) * i / (history.length - 1),
+    padT + (H - padT - padB) * (1 - h.percentage / 100),
+  ]);
+  if (pts.length > 1) svg.append(svgEl("polyline", { class: "line", points: pts.map(p => p.join(",")).join(" ") }));
+  pts.forEach(p => svg.append(svgEl("circle", { class: "dot", cx: p[0], cy: p[1], r: 4 })));
+  box.replaceChildren(svg);
+}
+
+function renderHistory(history) {
+  const box = $("history");
+  if (!history.length) return box.replaceChildren(el("div", { class: "empty", textContent: "Nothing logged yet." }));
+  const table = el("table");
+  table.append(el("thead", {}, el("tr", {}, ...["Time (UTC)", "Mode", "Score", "%"].map(h => el("th", { textContent: h })))));
+  const body = el("tbody");
+  history.slice().reverse().forEach(h => body.append(el("tr", {},
+    el("td", { textContent: h.time.replace("T", " ").replace("+00:00", "") }),
+    el("td", { textContent: h.mode }),
+    el("td", { textContent: `${h.score}/${h.total}` }),
+    el("td", { textContent: h.percentage + "%" }))));
+  table.append(body);
+  box.replaceChildren(table);
+}
+
+/* ---------- quiz ---------- */
+async function startQuiz(mode) {
+  ["result", "plan"].forEach(i => $(i).classList.add("hidden"));
+  try {
+    session = await api(`/api/quiz?${qs({ mode })}`);
+    renderQuiz(session);
+  } catch (e) { alert(e.message); }
+}
+
+function renderQuiz(q) {
+  const box = $("quiz");
+  box.replaceChildren(el("p", { class: "label", textContent: q.mode === "practice" ? "Targeted practice" : "Diagnostic quiz" }));
+  q.questions.forEach((item, i) => {
+    const wrap = el("div", { class: "q" });
+    const title = el("p", { textContent: `${i + 1}. ${item.question}` });
+    title.append(el("span", { class: "tag", textContent: `[${item.topic}${item.source === "gemini" ? " · AI" : ""}]` }));
+    wrap.append(title);
+    for (const [letter, text] of Object.entries(item.options)) {
+      wrap.append(el("label", { class: "opt" }, el("input", { type: "radio", name: item.id, value: letter }), `${letter}. ${text}`));
+    }
+    box.append(wrap);
+  });
+  const btn = el("button", { class: "primary", textContent: "Submit answers" });
+  btn.onclick = submit;
+  box.append(btn);
+  box.classList.remove("hidden");
+  box.scrollIntoView({ behavior: "smooth" });
+}
+
+async function submit() {
+  const answers = {};
+  session.questions.forEach(q => {
+    const c = document.querySelector(`input[name="${q.id}"]:checked`);
+    if (c) answers[q.id] = c.value;
+  });
+  try {
+    const res = await api("/api/submit", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ...current, session_id: session.session_id, answers }),
+    });
+    $("quiz").classList.add("hidden");
+    renderResult(res); renderPlan(res);
+    await refresh();
+    $("result").scrollIntoView({ behavior: "smooth" });
+  } catch (e) { alert(e.message); }
+}
+
+function renderResult(res) {
+  const box = $("result");
+  box.replaceChildren(
+    el("p", { class: "label", textContent: "Result" }),
+    el("div", { class: "big", textContent: `${res.score}/${res.total}  ${res.percentage}%` }),
+    el("p", { class: "label", textContent: "Review" })
+  );
+  const ul = el("ul");
+  res.review.forEach(r => ul.append(el("li", { class: r.correct ? "rev-ok" : "rev-bad",
+    textContent: `${r.correct ? "✓" : "✗"} ${r.question}${r.correct ? "" : ` (correct: ${r.correct_answer})`}` })));
+  box.append(ul);
+  box.classList.remove("hidden");
+}
+
+function renderPlan(res) {
+  const box = $("plan");
+  box.replaceChildren(el("p", { class: "label", textContent: "Next study plan" }));
+  res.study_plan.forEach(p => {
+    const d = el("div", { class: "plan-item" });
+    d.append(el("h4", { class: res.weak_topics.length ? "weak" : "ok", textContent: `${p.topic} · ${p.mastery}%` }), el("div", { textContent: p.action }));
+    if (p.notes.length) { const ul = el("ul"); p.notes.forEach(n => ul.append(el("li", { textContent: n }))); d.append(ul); }
+    box.append(d);
+  });
+  if (res.next_step === "practice") {
+    const b = el("button", { class: "primary", textContent: "Practice weak topics now" });
+    b.onclick = () => startQuiz("practice");
+    box.append(b);
+  }
+  box.classList.remove("hidden");
+}
+
+$("btnOpen").onclick = openDashboard;
+$("btnDiag").onclick = () => startQuiz("diagnostic");
+$("btnPractice").onclick = () => startQuiz("practice");
+["first", "last"].forEach(id => $(id).addEventListener("keydown", e => { if (e.key === "Enter") openDashboard(); }));
+init();
+</script>
+</body>
+</html>
