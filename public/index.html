@@ -54,15 +54,14 @@
   .label::before { content: "// "; color: var(--muted); }
 
   /* form */
-  .fields { display: grid; grid-template-columns: repeat(3, 1fr) auto; gap: 12px; align-items: end; }
+  .fields { display: grid; grid-template-columns: repeat(2, 1fr) auto; gap: 12px; align-items: end; }
   @media (max-width: 800px) { .fields { grid-template-columns: 1fr; } }
   .field label { display: block; font-family: var(--mono); font-size: 11px; letter-spacing: 1.5px; color: var(--muted);
     text-transform: uppercase; margin-bottom: 6px; }
-  input[type=text], select {
+  input[type=text] {
     width: 100%; padding: 11px 12px; background: #050a14; color: var(--text); font-family: var(--mono); font-size: 14px;
     border: 1px solid var(--line); border-radius: 4px; outline: none; }
-  input[type=text]:focus, select:focus { border-color: var(--neon); box-shadow: 0 0 0 1px var(--neon), 0 0 14px rgba(0, 200, 255, .35); }
-  select option { background: #050a14; }
+  input[type=text]:focus { border-color: var(--neon); box-shadow: 0 0 0 1px var(--neon), 0 0 14px rgba(0, 200, 255, .35); }
 
   button { font-family: var(--mono); font-size: 13px; letter-spacing: 1.5px; text-transform: uppercase; cursor: pointer;
     padding: 11px 18px; border-radius: 4px; border: 1px solid var(--neon); color: var(--neon); background: transparent;
@@ -79,7 +78,6 @@
     color: var(--neon); border: 1px solid var(--neon); box-shadow: 0 0 14px rgba(0, 200, 255, .5), inset 0 0 12px rgba(0, 200, 255, .2); }
   .student .who { flex: 1; min-width: 180px; }
   .student .who b { display: block; font-size: 18px; }
-  .student .who small { font-family: var(--mono); color: var(--muted); letter-spacing: 1px; }
   .actions { display: flex; gap: 10px; flex-wrap: wrap; }
 
   /* KPIs */
@@ -149,7 +147,6 @@
     <div class="fields">
       <div class="field"><label for="first">First name</label><input type="text" id="first" maxlength="40" autocomplete="given-name" placeholder="e.g. Kartik"></div>
       <div class="field"><label for="last">Surname</label><input type="text" id="last" maxlength="40" autocomplete="family-name" placeholder="e.g. Sharma"></div>
-      <div class="field"><label for="course">Course</label><select id="course"></select></div>
       <button class="primary" id="btnOpen">Open dashboard</button>
     </div>
     <div class="err" id="err"></div>
@@ -160,7 +157,7 @@
     <section class="panel">
       <div class="student">
         <div class="avatar" id="avatar">--</div>
-        <div class="who"><b id="whoName">-</b><small id="whoCourse">-</small></div>
+        <div class="who"><b id="whoName">-</b></div>
         <div class="actions">
           <button class="primary" id="btnDiag">Start diagnostic</button>
           <button id="btnPractice">Practice weak topics</button>
@@ -185,7 +182,7 @@
 <script>
 const $ = (id) => document.getElementById(id);
 let session = null;
-let current = null;   // student identity used for every API call
+let current = null;   // student identity used for every API call (no course: the server uses its default)
 
 function el(tag, props = {}, ...kids) {
   const n = document.createElement(tag);
@@ -216,23 +213,19 @@ async function init() {
     $("pApi").classList.add("on");
     $("pAi").classList.toggle("on", h.gemini);
     $("pAi").lastChild.textContent = h.gemini ? "GEMINI ON" : "GEMINI OFF (BANK)";
-    const c = await api("/api/courses");
-    c.courses.forEach(name => $("course").append(el("option", { value: name, textContent: name })));
-  } catch (e) { showErr("Cannot reach the server. Is `python run.py` running?"); }
+  } catch (e) { showErr("Cannot reach the server. Check that the API is running."); }
 }
 
 /* ---------- open dashboard ---------- */
 async function openDashboard() {
   showErr("");
-  const first = $("first").value.trim(), last = $("last").value.trim(), course = $("course").value;
+  const first = $("first").value.trim(), last = $("last").value.trim();
   if (!first || !last) return showErr("Enter both first name and surname.");
-  if (!course) return showErr("Choose a course.");
-  current = { first_name: first, last_name: last, course };
+  current = { first_name: first, last_name: last };
   try {
     const p = await api(`/api/progress?${qs()}`);
     $("avatar").textContent = (p.profile.first_name[0] + p.profile.last_name[0]).toUpperCase();
     $("whoName").textContent = `${p.profile.first_name} ${p.profile.last_name}`;
-    $("whoCourse").textContent = `COURSE: ${p.profile.course.toUpperCase()}`;
     ["quiz", "result", "plan"].forEach(i => $(i).classList.add("hidden"));
     $("dash").classList.remove("hidden");
     renderProgress(p);
